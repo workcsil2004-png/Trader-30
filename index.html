@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d0a">
+<link rel="manifest" href="manifest.json">
+<title>TRADER 30</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d0a;color:#e9f5ec;font-family:Arial;padding:20px}
+header{text-align:center;padding:18px}
+h1{color:#39ff88;letter-spacing:3px}
+.sub,small{color:#91a99a}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel,.day{background:#121c16;border:1px solid #26392c;border-radius:14px;padding:16px}
+.big{font-size:27px;font-weight:bold;margin-top:8px}
+.green{color:#39ff88}.red{color:#ff5252}
+.progress{height:9px;background:#26392c;border-radius:10px;margin:12px 0;overflow:hidden}
+#bar{height:100%;width:0;background:#39ff88}
+#days{display:grid;gap:10px;margin-top:18px}
+.top,.lossrow{display:flex;justify-content:space-between;align-items:center}
+label{display:flex;align-items:center;gap:10px;font-weight:bold}
+input[type=checkbox]{width:21px;height:21px;accent-color:#39ff88}
+input[type=number]{background:#080d0a;color:white;border:1px solid #395342;border-radius:8px;padding:10px;width:100px;font-size:16px}
+.lossrow{margin-top:14px}
+.status{font-size:12px;margin-top:10px}
+button{background:#39ff88;color:#061009;border:0;padding:14px;border-radius:10px;font-weight:bold;width:100%;margin-top:18px}
+.warning{background:#421719;color:#ff7777;padding:12px;border-radius:9px;margin-top:12px;display:none;font-weight:bold}
+footer{text-align:center;color:#72877a;font-size:11px;padding:25px 0}
+</style>
+</head>
+<body>
+<header>
+<h1>TRADER 30</h1>
+<div class="sub">30 DAYS • DISCIPLINE CHALLENGE</div>
+</header>
+<div class="stats">
+<div class="panel"><small>DAILY LOSS LIMIT</small><div class="big red">$10</div></div>
+<div class="panel"><small>COMPLETED DAYS</small><div class="big green" id="count">0/30</div></div>
+</div>
+<div class="panel" style="margin-top:12px">
+<div class="top"><small>MONTHLY PROGRESS</small><strong id="percent">0%</strong></div>
+<div class="progress"><div id="bar"></div></div>
+<small>Tick your day after completing it.</small>
+</div>
+<div id="warning" class="warning">⚠ STOP TRADING — DAILY LOSS LIMIT BREACHED</div>
+<div id="days"></div>
+<button onclick="resetAll()">RESET 30-DAY TRACKER</button>
+<footer>TRADER 30 • PROTECT YOUR CAPITAL<br>Maximum daily loss: $10</footer>
+<script>
+const KEY="trader30_data";
+let data=JSON.parse(localStorage.getItem(KEY)||"null")||Array.from({length:30},()=>({done:false,loss:""}));
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function render(){
+const container=document.getElementById("days");container.innerHTML="";
+let completed=data.filter(x=>x.done).length;
+document.getElementById("count").textContent=completed+"/30";
+let p=Math.round(completed/30*100);
+document.getElementById("percent").textContent=p+"%";
+document.getElementById("bar").style.width=p+"%";
+data.forEach((d,i)=>{
+let breached=d.loss!==""&&Number(d.loss)>=10;
+let card=document.createElement("div");card.className="day";
+card.innerHTML=`<div class="top"><label><input type="checkbox" ${d.done?"checked":""}> DAY ${i+1}</label><small>${d.done?"✓ COMPLETED":"PENDING"}</small></div><div class="lossrow"><small>Today's loss ($)</small><input type="number" min="0" step="0.01" placeholder="0.00" value="${d.loss}"></div><div class="status ${breached?"red":"green"}">${breached?"LIMIT REACHED — STOP TRADING":"WITHIN DAILY LIMIT"}</div>`;
+card.querySelector('input[type=checkbox]').addEventListener("change",e=>{data[i].done=e.target.checked;save()});
+card.querySelector('input[type=number]').addEventListener("input",e=>{
+data[i].loss=e.target.value;
+localStorage.setItem(KEY,JSON.stringify(data));
+let b=Number(data[i].loss)>=10;
+let status=card.querySelector(".status");
+status.className="status "+(b?"red":"green");
+status.textContent=b?"LIMIT REACHED — STOP TRADING":"WITHIN DAILY LIMIT";
+document.getElementById("warning").style.display=data.some(x=>x.loss!==""&&Number(x.loss)>=10)?"block":"none";
+});
+container.appendChild(card);
+});
+document.getElementById("warning").style.display=data.some(x=>x.loss!==""&&Number(x.loss)>=10)?"block":"none";
+}
+function resetAll(){if(confirm("Reset all 30 days?")){data=Array.from({length:30},()=>({done:false,loss:""}));save()}}
+render();
+</script>
+</body>
+</html>
